@@ -1,3 +1,4 @@
+using PaymentGateway.Api.Enums;
 using PaymentGateway.Api.Models;
 using PaymentGateway.Api.Models.Persistence;
 using PaymentGateway.Api.Services.Repositories;
@@ -76,7 +77,7 @@ public class InMemoryPaymentsRepositoryTests
             ExpiryMonth = _random.Next(1, 12),
             Amount = _random.Next(1, 10000),
             CardNumberLastFour = "3456",
-            Currency = "GBP"
+            Currency = CurrencyCode.GBP
         };
     }
 }

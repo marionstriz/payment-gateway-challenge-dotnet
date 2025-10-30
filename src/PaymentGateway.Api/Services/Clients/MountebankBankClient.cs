@@ -34,12 +34,12 @@ public class MountebankBankClient(
         catch (HttpRequestException e)
         {
             throw new PaymentAuthorizationFailedException(
-                $"Payment authorization HTTP request failed: {e.HttpRequestError.ToString()} {e.Message}.", info);
+                $"Montebank payment authorization request failed: {e.Message}.");
         }
         catch (TaskCanceledException e)
         {
             throw new PaymentAuthorizationFailedException(
-                $"Payment authorization request canceled: {e.Message}.", info);
+                $"Montebank payment authorization request canceled: {e.Message}.");
         }
     }
 

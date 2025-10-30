@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 using PaymentGateway.Api.Enums;
 
@@ -9,26 +10,32 @@ public record ProcessPaymentRequest : IValidatableObject
     [Required]
     [RegularExpression(@"^\d+$", ErrorMessage = "Card number must be numeric.")]
     [StringLength(19, MinimumLength = 14, ErrorMessage = "Card number must be between 14-19 digits.")]
+    [DefaultValue("11111111111111")]
     public required string CardNumber { get; init; }
     
     [Required]
     [Range(1, 12, ErrorMessage = "Expiry month must be between 1 and 12.")]
+    [DefaultValue("1")]
     public required int ExpiryMonth { get; init; }
     
     [Required]
+    [DefaultValue("2030")]
     public required int ExpiryYear { get; init; }
     
     [Required]
     [StringLength(3, MinimumLength = 3, ErrorMessage = "Currency code must be 3 characters.")]
+    [DefaultValue(nameof(CurrencyCode.EUR))]
     public required string Currency { get; init; }
     
     [Required]
     [Range(1, int.MaxValue, ErrorMessage = "Amount must be a positive integer.")]
+    [DefaultValue(10000)]
     public required int Amount { get; init; }
     
     [Required]
     [RegularExpression(@"^\d+$", ErrorMessage = "CVV must be numeric.")]
     [StringLength(4, MinimumLength = 3, ErrorMessage = "CVV must be 3-4 digits.")]
+    [DefaultValue("123")]
     public required string Cvv { get; init; }
     
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

@@ -100,7 +100,7 @@ public class MountebankBankClientTests
         var ex = await Assert.ThrowsAsync<PaymentAuthorizationFailedException>(() =>
             _bankClient.AuthorizePaymentAsync(paymentInfo));
         
-        Assert.Contains("Payment authorization HTTP request failed", ex.Message);
+        Assert.Contains("Montebank payment authorization request failed", ex.Message);
     }
 
     private PaymentInfo CreatePaymentInfo()

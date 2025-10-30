@@ -79,12 +79,12 @@ public class PaymentsControllerTests
         // Assert
         Assert.NotNull(paymentResponse);
         Assert.Equal(paymentDao.Id, paymentResponse.Id);
-        Assert.Equal(paymentDao.Status, paymentResponse.Status);
+        Assert.Equal(paymentDao.Status.ToString(), paymentResponse.Status);
         Assert.Equal(paymentDao.ExpiryYear, paymentResponse.ExpiryYear);
         Assert.Equal(paymentDao.ExpiryMonth, paymentResponse.ExpiryMonth);
         Assert.Equal(paymentDao.Amount, paymentResponse.Amount);
         Assert.Equal(paymentDao.CardNumberLastFour, paymentResponse.CardNumberLastFour);
-        Assert.Equal(paymentDao.Currency, paymentResponse.Currency);
+        Assert.Equal(paymentDao.Currency.ToString(), paymentResponse.Currency);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class PaymentsControllerTests
         
         // Assert
         Assert.NotNull(paymentResponse);
-        Assert.Equal(PaymentStatus.Authorized, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Authorized), paymentResponse.Status);
     }
     
     [Fact]
@@ -182,7 +182,7 @@ public class PaymentsControllerTests
         
         // Assert
         Assert.NotNull(paymentResponse);
-        Assert.Equal(PaymentStatus.Declined, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Declined), paymentResponse.Status);
     }
     
     [Theory]
@@ -204,7 +204,7 @@ public class PaymentsControllerTests
         // Assert
         Assert.NotNull(paymentResponse);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Rejected), paymentResponse.Status);
     }
     
     [Theory]
@@ -226,7 +226,7 @@ public class PaymentsControllerTests
         // Assert
         Assert.NotNull(paymentResponse);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Rejected), paymentResponse.Status);
     }
     
     [Theory]
@@ -248,7 +248,7 @@ public class PaymentsControllerTests
         // Assert
         Assert.NotNull(paymentResponse);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Rejected), paymentResponse.Status);
     }
     
     [Theory]
@@ -269,7 +269,7 @@ public class PaymentsControllerTests
         // Assert
         Assert.NotNull(paymentResponse);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Rejected), paymentResponse.Status);
     }
     
     [Theory]
@@ -291,7 +291,7 @@ public class PaymentsControllerTests
         // Assert
         Assert.NotNull(paymentResponse);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Rejected), paymentResponse.Status);
     }
     
     [Fact]
@@ -313,7 +313,7 @@ public class PaymentsControllerTests
         // Assert
         Assert.NotNull(paymentResponse);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Rejected), paymentResponse.Status);
     }
     
     [Fact]
@@ -335,7 +335,7 @@ public class PaymentsControllerTests
         // Assert
         Assert.NotNull(paymentResponse);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Rejected), paymentResponse.Status);
     }
     
     [Fact]
@@ -355,7 +355,7 @@ public class PaymentsControllerTests
         
         // Assert
         Assert.NotNull(paymentResponse);
-        Assert.Equal(PaymentStatus.Authorized, paymentResponse.Status);
+        Assert.Equal(nameof(PaymentStatus.Authorized), paymentResponse.Status);
     }
     
     private PaymentDao CreatePaymentDao()
@@ -368,7 +368,7 @@ public class PaymentsControllerTests
             ExpiryMonth = _random.Next(1, 12),
             Amount = _random.Next(1, 10000),
             CardNumberLastFour = "9876",
-            Currency = "GBP"
+            Currency = CurrencyCode.GBP
         };
     }
 

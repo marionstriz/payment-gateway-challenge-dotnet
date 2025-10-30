@@ -1,11 +1,16 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
+
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 using Moq;
 
 using PaymentGateway.Api.Controllers;
+using PaymentGateway.Api.Models.Requests;
 using PaymentGateway.Api.Models.Responses;
 using PaymentGateway.Api.Services.Repositories;
 
@@ -30,7 +35,7 @@ public class PaymentsControllerTests
     }
     
     [Fact]
-    public async Task RetrievesAPaymentSuccessfully()
+    public async Task GivenPaymentInRepository_WhenGetAsync_ThenRetrievesAPaymentSuccessfully()
     {
         // Arrange
         var payment = CreatePaymentResponse();
@@ -46,7 +51,7 @@ public class PaymentsControllerTests
     }
     
     [Fact]
-    public async Task ReturnsPaymentDetails()
+    public async Task GivenPaymentInRepository_WhenGetAsync_ThenReturnsPaymentDetails()
     {
         // Arrange
         var payment = CreatePaymentResponse();
@@ -61,17 +66,27 @@ public class PaymentsControllerTests
     }
 
     [Fact]
-    public async Task Returns404IfPaymentNotFound()
+    public async Task GivenPaymentNotInRepository_WhenGetAsync_ThenReturns404IfPaymentNotFound()
     {
-        // Arrange
-        var webApplicationFactory = new WebApplicationFactory<PaymentsController>();
-        var client = webApplicationFactory.CreateClient();
-        
         // Act
-        var response = await client.GetAsync($"/api/Payments/{Guid.NewGuid()}");
+        var response = await _client.GetAsync($"/api/Payments/{Guid.NewGuid()}");
         
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+    
+    [Fact]
+    public async Task GivenPaymentRequest_WhenPostAsync_ThenAddsPaymentSuccessfully()
+    {
+        // Arrange
+        var postPaymentRequest = CreatePaymentRequest();
+        var httpContent = CreateJsonHttpContent(postPaymentRequest);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Payments", httpContent);
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     private PaymentResponse CreatePaymentResponse()
@@ -85,5 +100,22 @@ public class PaymentsControllerTests
             CardNumberLastFour = _random.Next(1111, 9999),
             Currency = "GBP"
         };
+    }
+    
+    private PostPaymentRequest CreatePaymentRequest()
+    {
+        return new PostPaymentRequest
+        {
+            ExpiryYear = _random.Next(2023, 2030),
+            ExpiryMonth = _random.Next(1, 12),
+            Amount = _random.Next(1, 10000),
+            CardNumberLastFour = _random.Next(1111, 9999),
+            Currency = "GBP"
+        };
+    }
+
+    private HttpContent CreateJsonHttpContent(object content)
+    {
+        return new StringContent(JsonSerializer.Serialize(content), Encoding.UTF8, "application/json");
     }
 }

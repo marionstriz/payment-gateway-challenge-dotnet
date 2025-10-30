@@ -3,18 +3,20 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 using Moq;
 
 using PaymentGateway.Api.Controllers;
+using PaymentGateway.Api.Enums;
 using PaymentGateway.Api.Models;
 using PaymentGateway.Api.Models.Persistence;
-using PaymentGateway.Api.Models.Requests;
 using PaymentGateway.Api.Models.Responses;
-using PaymentGateway.Api.Services.BankClients;
+using PaymentGateway.Api.Services.Clients;
 using PaymentGateway.Api.Services.Repositories;
+using PaymentGateway.Api.Tests.TestUtilities.Builders;
 
 namespace PaymentGateway.Api.Tests.Controllers;
 
@@ -35,8 +37,16 @@ public class PaymentsControllerTests
         _client = webApplicationFactory.WithWebHostBuilder(builder =>
                 builder.ConfigureServices(services => ((ServiceCollection)services)
                     .AddSingleton(_mockPaymentsRepository.Object)
-                    .AddSingleton(_mockBankClient.Object)))
+                    .AddSingleton(_mockBankClient.Object)
+                    .Configure<ApiBehaviorOptions>(options =>
+                    {
+                        options.SuppressModelStateInvalidFilter = true;
+                    })))
             .CreateClient();
+        
+        var authorizationResponse = new AuthorizationInfo{Authorized = true};
+        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>()))
+            .ReturnsAsync(authorizationResponse);
     }
     
     [Fact]
@@ -95,11 +105,11 @@ public class PaymentsControllerTests
     public async Task GivenRequestAuthorized_WhenPostAsync_ThenReturnsApprovedPaymentResponse()
     {
         // Arrange
-        var processPaymentRequest = CreateProcessPaymentRequest();
+        var processPaymentRequest = new ProcessPaymentRequestBuilder().Build();
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
-        var authorizationResponse = new BankAuthorizationResponse {Authorized = true};
-        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(processPaymentRequest))
+        var authorizationResponse = new AuthorizationInfo {Authorized = true};
+        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>()))
             .ReturnsAsync(authorizationResponse);
         
         // Act
@@ -112,14 +122,58 @@ public class PaymentsControllerTests
     }
     
     [Fact]
+    public async Task GivenValidRequest_WhenPostAsync_ThenCallsBankClientWithMappedData()
+    {
+        // Arrange
+        var processPaymentRequest = new ProcessPaymentRequestBuilder().Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        await _client.PostAsync("/api/Payments", httpContent);
+        
+        // Assert
+        _mockBankClient.Verify(b => b.AuthorizePaymentAsync(It.Is<PaymentInfo>(r => 
+            r.CardNumber.Equals(processPaymentRequest.CardNumber) 
+            && r.Amount.Equals(processPaymentRequest.Amount) 
+            && r.ExpiryMonth.Equals(processPaymentRequest.ExpiryMonth) 
+            && r.ExpiryYear.Equals(processPaymentRequest.ExpiryYear) 
+            && r.Cvv.Equals(processPaymentRequest.Cvv))),
+            Times.Once);
+        _mockBankClient.VerifyNoOtherCalls();
+    }
+    
+    [Theory]
+    [InlineData("EUR", CurrencyCode.EUR)]
+    [InlineData("Usd", CurrencyCode.USD)]
+    [InlineData("gbp", CurrencyCode.GBP)]
+    public async Task GivenValidCurrency_WhenPostAsync_ThenCallsBankClientWithExpectedCurrency(
+        string currencyCode, CurrencyCode expectedCurrency)
+    {
+        // Arrange
+        var processPaymentRequest = new ProcessPaymentRequestBuilder()
+            .WithCurrency(currencyCode)
+            .Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        await _client.PostAsync("/api/Payments", httpContent);
+        
+        // Assert
+        _mockBankClient.Verify(b => b.AuthorizePaymentAsync(It.Is<PaymentInfo>(r => 
+                r.Currency.Equals(expectedCurrency))),
+            Times.Once);
+        _mockBankClient.VerifyNoOtherCalls();
+    }
+    
+    [Fact]
     public async Task GivenRequestNotAuthorized_WhenPostAsync_ThenReturnsDeclinedPaymentResponse()
     {
         // Arrange
-        var processPaymentRequest = CreateProcessPaymentRequest();
+        var processPaymentRequest = new ProcessPaymentRequestBuilder().Build();
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
-        var authorizationResponse = new BankAuthorizationResponse {Authorized = false};
-        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(processPaymentRequest))
+        var authorizationResponse = new AuthorizationInfo {Authorized = false};
+        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>()))
             .ReturnsAsync(authorizationResponse);
         
         // Act
@@ -131,17 +185,112 @@ public class PaymentsControllerTests
         Assert.Equal(PaymentStatus.Declined, paymentResponse.Status);
     }
     
-    private ProcessPaymentRequest CreateProcessPaymentRequest()
+    [Theory]
+    [InlineData("1234567898765")]
+    [InlineData("98765432123456789876")]
+    [InlineData("9876543212345678f")]
+    public async Task GivenInvalidCardNumber_WhenPostAsync_ThenReturns400RejectedPaymentResponse(string cardNumber)
     {
-        return new ProcessPaymentRequest
-        {
-            ExpiryYear = _random.Next(2023, 2030),
-            ExpiryMonth = _random.Next(1, 12),
-            Amount = _random.Next(1, 10000),
-            CardNumber = "143487937937497",
-            Currency = "GBP",
-            Cvv = 123
-        };
+        // Arrange
+        var processPaymentRequest = new ProcessPaymentRequestBuilder()
+            .WithCardNumber(cardNumber)
+            .Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+        
+        // Assert
+        Assert.NotNull(paymentResponse);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+    }
+    
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(13)]
+    public async Task GivenInvalidExpiryMonth_WhenPostAsync_ThenReturns400RejectedPaymentResponse(int expiryMonth)
+    {
+        // Arrange
+        var processPaymentRequest = new ProcessPaymentRequestBuilder()
+            .WithExpiryMonth(expiryMonth)
+            .Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+        
+        // Assert
+        Assert.NotNull(paymentResponse);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+    }
+    
+    [Fact]
+    public async Task GivenExpiryDateOneMonthAgo_WhenPostAsync_ThenReturns400RejectedPaymentResponse()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        var future = now.Subtract(TimeSpan.FromDays(32));
+        var processPaymentRequest = new ProcessPaymentRequestBuilder()
+            .WithExpiryYear(future.Year)
+            .WithExpiryMonth(future.Month)
+            .Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+        
+        // Assert
+        Assert.NotNull(paymentResponse);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+    }
+    
+    [Fact]
+    public async Task GivenExpiryDateOneYearAgo_WhenPostAsync_ThenReturns400RejectedPaymentResponse()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        var future = now.Subtract(TimeSpan.FromDays(365));
+        var processPaymentRequest = new ProcessPaymentRequestBuilder()
+            .WithExpiryYear(future.Year)
+            .WithExpiryMonth(future.Month)
+            .Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+        
+        // Assert
+        Assert.NotNull(paymentResponse);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+    }
+    
+    [Fact]
+    public async Task GivenExpiryDateThisMonth_WhenPostAsync_ThenReturnsAuthorizedPaymentResponse()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        var processPaymentRequest = new ProcessPaymentRequestBuilder()
+            .WithExpiryYear(now.Year)
+            .WithExpiryMonth(now.Month)
+            .Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+        
+        // Assert
+        Assert.NotNull(paymentResponse);
+        Assert.Equal(PaymentStatus.Authorized, paymentResponse.Status);
     }
     
     private PaymentDao CreatePaymentDao()

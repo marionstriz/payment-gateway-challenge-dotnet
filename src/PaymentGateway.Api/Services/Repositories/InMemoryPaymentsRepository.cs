@@ -1,18 +1,19 @@
-﻿using PaymentGateway.Api.Models.Responses;
+﻿using PaymentGateway.Api.Models.Persistence;
 
 namespace PaymentGateway.Api.Services.Repositories;
 
 public class InMemoryPaymentsRepository : IPaymentsRepository
 {
-    public List<PaymentResponse> Payments = new();
+    private readonly Dictionary<Guid, PaymentDao> _payments = new();
     
-    public void Add(PaymentResponse payment)
+    public Task AddAsync(PaymentDao payment)
     {
-        Payments.Add(payment);
+        _payments.Add(payment.Id, payment);
+        return Task.CompletedTask;
     }
 
-    public PaymentResponse? Get(Guid id)
+    public Task<PaymentDao?> GetAsync(Guid id)
     {
-        return Payments.FirstOrDefault(p => p.Id == id);
+        return Task.FromResult(_payments.GetValueOrDefault(id));
     }
 }

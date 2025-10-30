@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
 using PaymentGateway.Api.Models.Responses;
-using PaymentGateway.Api.Services;
 using PaymentGateway.Api.Services.Repositories;
 
 namespace PaymentGateway.Api.Controllers;
@@ -13,13 +12,24 @@ public class PaymentsController(IPaymentsRepository paymentsRepository) : Contro
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<PaymentResponse?>> GetPaymentAsync(Guid id)
     {
-        var payment = paymentsRepository.Get(id);
+        var paymentDao = await paymentsRepository.GetAsync(id);
         
-        if (payment is null)
+        if (paymentDao is null)
         {
             return NotFound();
         }
 
-        return new OkObjectResult(payment);
+        var paymentResponse = new PaymentResponse
+        {
+            Id = paymentDao.Id,
+            ExpiryMonth = paymentDao.ExpiryMonth,
+            ExpiryYear = paymentDao.ExpiryYear,
+            Amount = paymentDao.Amount,
+            CardNumberLastFour = paymentDao.CardNumberLastFour,
+            Currency = paymentDao.Currency,
+            Status = paymentDao.Status
+        };
+
+        return new OkObjectResult(paymentResponse);
     }
 }

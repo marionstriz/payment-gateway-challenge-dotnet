@@ -1,9 +1,9 @@
-using PaymentGateway.Api.Models.Responses;
+using PaymentGateway.Api.Models.Persistence;
 
 namespace PaymentGateway.Api.Services.Repositories;
 
 public interface IPaymentsRepository
 {
-    public void Add(PaymentResponse payment);
-    public PaymentResponse? Get(Guid id);
+    public Task AddAsync(PaymentDao payment);
+    public Task<PaymentDao?> GetAsync(Guid id);
 }

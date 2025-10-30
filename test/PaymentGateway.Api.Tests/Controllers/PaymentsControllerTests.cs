@@ -229,6 +229,71 @@ public class PaymentsControllerTests
         Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
     }
     
+    [Theory]
+    [InlineData("EURO")]
+    [InlineData("BGN")]
+    [InlineData("eur ")]
+    public async Task GivenInvalidCurrency_WhenPostAsync_ThenReturns400RejectedPaymentResponse(string currencyCode)
+    {
+        // Arrange
+        var processPaymentRequest = new ProcessPaymentRequestBuilder()
+            .WithCurrency(currencyCode)
+            .Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+        
+        // Assert
+        Assert.NotNull(paymentResponse);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+    }
+    
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-2)]
+    public async Task GivenInvalidAmount_WhenPostAsync_ThenReturns400RejectedPaymentResponse(int amount)
+    {
+        // Arrange
+        var processPaymentRequest = new ProcessPaymentRequestBuilder()
+            .WithAmount(amount)
+            .Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+        
+        // Assert
+        Assert.NotNull(paymentResponse);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+    }
+    
+    [Theory]
+    [InlineData("12")]
+    [InlineData("12555")]
+    [InlineData("abc")]
+    public async Task GivenInvalidCvv_WhenPostAsync_ThenReturns400RejectedPaymentResponse(string cvv)
+    {
+        // Arrange
+        var processPaymentRequest = new ProcessPaymentRequestBuilder()
+            .WithCvv(cvv)
+            .Build();
+        var httpContent = CreateJsonHttpContent(processPaymentRequest);
+        
+        // Act
+        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+        
+        // Assert
+        Assert.NotNull(paymentResponse);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(PaymentStatus.Rejected, paymentResponse.Status);
+    }
+    
     [Fact]
     public async Task GivenExpiryDateOneMonthAgo_WhenPostAsync_ThenReturns400RejectedPaymentResponse()
     {

@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
+using PaymentGateway.Api.Enums;
+
 namespace PaymentGateway.Api.Models.Requests;
 
 public record ProcessPaymentRequest : IValidatableObject
@@ -21,9 +23,12 @@ public record ProcessPaymentRequest : IValidatableObject
     public required string Currency { get; init; }
     
     [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "Amount must be a positive integer.")]
     public required int Amount { get; init; }
     
     [Required]
+    [RegularExpression(@"^\d+$", ErrorMessage = "CVV must be numeric.")]
+    [StringLength(4, MinimumLength = 3, ErrorMessage = "CVV must be 3-4 digits.")]
     public required string Cvv { get; init; }
     
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -32,9 +37,14 @@ public record ProcessPaymentRequest : IValidatableObject
         
         if (ExpiryYear < now.Year || (ExpiryYear == now.Year && ExpiryMonth < now.Month))
         {
-            yield return new ValidationResult("Expiry date must be in the future", 
+            yield return new ValidationResult("Expiry date must be in the future.", 
                 [nameof(ExpiryMonth), nameof(ExpiryYear)]
             );
+        }
+
+        if (Enum.TryParse(typeof(CurrencyCode), Currency, true, out _) is false)
+        {
+            yield return new ValidationResult("Currency code not supported.", [nameof(Currency)]);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using PaymentGateway.Api.Models.Responses;
 
-namespace PaymentGateway.Api.Services.Repository;
+namespace PaymentGateway.Api.Services.Repositories;
 
 public class InMemoryPaymentsRepository : IPaymentsRepository
 {

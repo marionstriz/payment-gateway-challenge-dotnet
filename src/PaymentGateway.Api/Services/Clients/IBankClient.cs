@@ -4,5 +4,5 @@ namespace PaymentGateway.Api.Services.Clients;
 
 public interface IBankClient
 {
-    public Task<AuthorizationInfo> AuthorizePaymentAsync(PaymentInfo info);
+    public Task<AuthorizationInfo> AuthorizePaymentAsync(PaymentInfo info, CancellationToken cancellationToken = new());
 }

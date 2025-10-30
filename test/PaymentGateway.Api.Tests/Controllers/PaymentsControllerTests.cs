@@ -45,7 +45,7 @@ public class PaymentsControllerTests
             .CreateClient();
         
         var authorizationResponse = new AuthorizationInfo{Authorized = true};
-        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>()))
+        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authorizationResponse);
     }
     
@@ -109,7 +109,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         var authorizationResponse = new AuthorizationInfo {Authorized = true};
-        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>()))
+        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authorizationResponse);
         
         // Act
@@ -137,7 +137,7 @@ public class PaymentsControllerTests
             && r.Amount.Equals(processPaymentRequest.Amount) 
             && r.ExpiryMonth.Equals(processPaymentRequest.ExpiryMonth) 
             && r.ExpiryYear.Equals(processPaymentRequest.ExpiryYear) 
-            && r.Cvv.Equals(processPaymentRequest.Cvv))),
+            && r.Cvv.Equals(processPaymentRequest.Cvv)), It.IsAny<CancellationToken>()),
             Times.Once);
         _mockBankClient.VerifyNoOtherCalls();
     }
@@ -160,7 +160,7 @@ public class PaymentsControllerTests
         
         // Assert
         _mockBankClient.Verify(b => b.AuthorizePaymentAsync(It.Is<PaymentInfo>(r => 
-                r.Currency.Equals(expectedCurrency))),
+                r.Currency.Equals(expectedCurrency)), It.IsAny<CancellationToken>()),
             Times.Once);
         _mockBankClient.VerifyNoOtherCalls();
     }
@@ -173,7 +173,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         var authorizationResponse = new AuthorizationInfo {Authorized = false};
-        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>()))
+        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authorizationResponse);
         
         // Act

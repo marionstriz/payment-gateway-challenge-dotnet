@@ -6,10 +6,10 @@ public class InMemoryPaymentsRepository : IPaymentsRepository
 {
     private readonly Dictionary<Guid, PaymentDao> _payments = new();
     
-    public Task AddAsync(PaymentDao payment)
+    public Task<PaymentDao> AddAsync(PaymentDao payment)
     {
         _payments.Add(payment.Id, payment);
-        return Task.CompletedTask;
+        return Task.FromResult(payment);
     }
 
     public Task<PaymentDao?> GetAsync(Guid id)

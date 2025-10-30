@@ -1,3 +1,4 @@
+using PaymentGateway.Api.Models;
 using PaymentGateway.Api.Models.Persistence;
 using PaymentGateway.Api.Services.Repositories;
 
@@ -38,6 +39,19 @@ public class InMemoryPaymentsRepositoryTests
     }
     
     [Fact]
+    public async Task GivenNoPaymentExists_WhenAddAsync_ThenReturnsAddedPayment()
+    {
+        // Arrange
+        var paymentToAdd = CreatePaymentDao();
+        
+        // Act
+        var addedPayment = await _repository.AddAsync(paymentToAdd);
+        
+        // Assert
+        Assert.Equal(paymentToAdd, addedPayment);
+    }
+    
+    [Fact]
     public async Task GivenPaymentWithIdExists_WhenAddAsync_ThenThrowsArgumentExceptionWithId()
     {
         // Arrange
@@ -57,10 +71,11 @@ public class InMemoryPaymentsRepositoryTests
         return new PaymentDao
         {
             Id = Guid.NewGuid(),
+            Status = PaymentStatus.Authorized,
             ExpiryYear = _random.Next(2023, 2030),
             ExpiryMonth = _random.Next(1, 12),
             Amount = _random.Next(1, 10000),
-            CardNumberLastFour = _random.Next(1111, 9999),
+            CardNumberLastFour = "3456",
             Currency = "GBP"
         };
     }

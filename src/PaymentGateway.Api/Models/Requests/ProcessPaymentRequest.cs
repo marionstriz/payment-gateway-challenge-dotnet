@@ -13,20 +13,32 @@ public record ProcessPaymentRequest : IValidatableObject
     [DefaultValue("11111111111111")]
     public required string CardNumber { get; init; }
     
+    /// <summary>
+    /// The combination of expiry month + year must be in the future.
+    /// </summary>
     [Required]
     [Range(1, 12, ErrorMessage = "Expiry month must be between 1 and 12.")]
     [DefaultValue("1")]
     public required int ExpiryMonth { get; init; }
     
+    /// <summary>
+    /// The combination of expiry month + year must be in the future.
+    /// </summary>
     [Required]
     [DefaultValue("2030")]
     public required int ExpiryYear { get; init; }
     
+    /// <summary>
+    /// ISO currency code. Currently supported codes: [EUR, GBP, USD] 
+    /// </summary>
     [Required]
     [StringLength(3, MinimumLength = 3, ErrorMessage = "Currency code must be 3 characters.")]
     [DefaultValue(nameof(CurrencyCode.EUR))]
     public required string Currency { get; init; }
     
+    /// <summary>
+    /// Represents the amount in the minor currency unit.
+    /// </summary>
     [Required]
     [Range(1, int.MaxValue, ErrorMessage = "Amount must be a positive integer.")]
     [DefaultValue(10000)]

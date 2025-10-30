@@ -1,5 +1,7 @@
 ﻿using System.Net;
 
+using Asp.Versioning;
+
 using Microsoft.AspNetCore.Mvc;
 
 using PaymentGateway.Api.Enums;
@@ -13,7 +15,8 @@ using PaymentGateway.Api.Services.Repositories;
 
 namespace PaymentGateway.Api.Controllers;
 
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
 public class PaymentsController(
     IPaymentsRepository paymentsRepository, 
@@ -71,7 +74,6 @@ public class PaymentsController(
             var paymentResponse = BuildPaymentResponse(paymentRequest, authorizationInfo);
             
             var paymentDao = BuildPaymentDao(paymentResponse);
-
             await paymentsRepository.AddAsync(paymentDao);
 
             return new OkObjectResult(paymentResponse);

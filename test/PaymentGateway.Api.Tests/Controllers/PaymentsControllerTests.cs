@@ -14,6 +14,7 @@ using PaymentGateway.Api.Enums;
 using PaymentGateway.Api.Models;
 using PaymentGateway.Api.Models.Persistence;
 using PaymentGateway.Api.Models.Responses;
+using PaymentGateway.Api.Services;
 using PaymentGateway.Api.Services.Clients;
 using PaymentGateway.Api.Services.Repositories;
 using PaymentGateway.Api.Tests.TestUtilities.Builders;
@@ -26,12 +27,12 @@ public class PaymentsControllerTests
     private readonly HttpClient _client;
     
     private readonly Mock<IPaymentsRepository> _mockPaymentsRepository;
-    private readonly Mock<IBankClient> _mockBankClient;
+    private readonly Mock<IAuthorizer> _mockBankClient;
 
     public PaymentsControllerTests()
     {
         _mockPaymentsRepository = new Mock<IPaymentsRepository>();
-        _mockBankClient = new Mock<IBankClient>();
+        _mockBankClient = new Mock<IAuthorizer>();
         
         var webApplicationFactory = new WebApplicationFactory<PaymentsController>();
         _client = webApplicationFactory.WithWebHostBuilder(builder =>

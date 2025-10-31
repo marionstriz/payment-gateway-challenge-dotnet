@@ -10,7 +10,7 @@ namespace PaymentGateway.Api.Services.Clients;
 
 public class MountebankBankClient(
     IHttpClientFactory httpClientFactory, 
-    IOptions<BankClientSettings> clientOptions) : IBankClient
+    IOptions<BankClientSettings> clientOptions) : IAuthorizer
 {
     public const string HttpClientName = "Mountebank";
     

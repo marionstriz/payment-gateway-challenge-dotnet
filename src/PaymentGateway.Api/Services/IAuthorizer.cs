@@ -1,8 +1,8 @@
 using PaymentGateway.Api.Models;
 
-namespace PaymentGateway.Api.Services.Clients;
+namespace PaymentGateway.Api.Services;
 
-public interface IBankClient
+public interface IAuthorizer
 {
     public Task<AuthorizationInfo> AuthorizePaymentAsync(PaymentInfo info, CancellationToken cancellationToken = new());
 }

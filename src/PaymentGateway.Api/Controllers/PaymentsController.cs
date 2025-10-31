@@ -10,6 +10,7 @@ using PaymentGateway.Api.Models;
 using PaymentGateway.Api.Models.Persistence;
 using PaymentGateway.Api.Models.Requests;
 using PaymentGateway.Api.Models.Responses;
+using PaymentGateway.Api.Services;
 using PaymentGateway.Api.Services.Clients;
 using PaymentGateway.Api.Services.Repositories;
 
@@ -20,7 +21,7 @@ namespace PaymentGateway.Api.Controllers;
 [ApiController]
 public class PaymentsController(
     IPaymentsRepository paymentsRepository, 
-    IBankClient bankClient, 
+    IAuthorizer authorizer, 
     ILogger<PaymentsController> logger) : Controller
 {
     [HttpGet("{id:guid}")]
@@ -69,7 +70,7 @@ public class PaymentsController(
             }
 
             var paymentInfo = BuildPaymentInfo(paymentRequest);
-            var authorizationInfo = await bankClient.AuthorizePaymentAsync(paymentInfo);
+            var authorizationInfo = await authorizer.AuthorizePaymentAsync(paymentInfo);
 
             var paymentResponse = BuildPaymentResponse(paymentRequest, authorizationInfo);
             

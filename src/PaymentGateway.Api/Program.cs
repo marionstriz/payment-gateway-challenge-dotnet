@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
+using PaymentGateway.Api.Services;
 using PaymentGateway.Api.Services.Clients;
 using PaymentGateway.Api.Services.Repositories;
 using PaymentGateway.Api.Settings;
@@ -33,7 +34,7 @@ builder.Services.AddApiVersioning(options =>
 });
 
 builder.Services.AddSingleton<IPaymentsRepository, InMemoryPaymentsRepository>();
-builder.Services.AddSingleton<IBankClient, MountebankBankClient>();
+builder.Services.AddSingleton<IAuthorizer, MountebankBankClient>();
 
 builder.Services.Configure<BankClientSettings>(builder.Configuration.GetSection(nameof(BankClientSettings)));
 

@@ -15,7 +15,7 @@ public class InMemoryPaymentsRepositoryTests
     public async Task GivenPaymentAdded_WhenGetAsync_ThenReturnsPayment()
     {
         // Arrange
-        var initialPayment = CreatePaymentDao();
+        var initialPayment = CreatePayment();
         await _repository.AddAsync(initialPayment);
         
         // Act
@@ -43,7 +43,7 @@ public class InMemoryPaymentsRepositoryTests
     public async Task GivenNoPaymentExists_WhenAddAsync_ThenReturnsAddedPayment()
     {
         // Arrange
-        var paymentToAdd = CreatePaymentDao();
+        var paymentToAdd = CreatePayment();
         
         // Act
         var addedPayment = await _repository.AddAsync(paymentToAdd);
@@ -56,7 +56,7 @@ public class InMemoryPaymentsRepositoryTests
     public async Task GivenPaymentWithIdExists_WhenAddAsync_ThenThrowsArgumentExceptionWithId()
     {
         // Arrange
-        var initialPayment = CreatePaymentDao();
+        var initialPayment = CreatePayment();
         await _repository.AddAsync(initialPayment);
         
         // Act
@@ -67,9 +67,9 @@ public class InMemoryPaymentsRepositoryTests
         Assert.Contains(initialPayment.Id.ToString(), exception.Message);
     }
     
-    private PaymentDao CreatePaymentDao()
+    private Payment CreatePayment()
     {
-        return new PaymentDao
+        return new Payment
         {
             Id = Guid.NewGuid(),
             Status = PaymentStatus.Authorized,

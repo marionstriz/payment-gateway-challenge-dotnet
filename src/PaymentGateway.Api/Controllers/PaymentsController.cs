@@ -7,16 +7,14 @@ using Microsoft.AspNetCore.Mvc;
 using PaymentGateway.Api.Enums;
 using PaymentGateway.Api.Exceptions;
 using PaymentGateway.Api.Models;
-using PaymentGateway.Api.Models.Persistence;
-using PaymentGateway.Api.Models.Requests;
-using PaymentGateway.Api.Models.Responses;
+using PaymentGateway.Api.Models.Api.Requests;
+using PaymentGateway.Api.Models.Api.Responses;
 using PaymentGateway.Api.Services;
-using PaymentGateway.Api.Services.Clients;
 using PaymentGateway.Api.Services.Repositories;
 
 namespace PaymentGateway.Api.Controllers;
 
-[ApiVersion("1.0")]
+[ApiVersion("1")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
 public class PaymentsController(
@@ -32,17 +30,17 @@ public class PaymentsController(
     {
         try
         {
-            var paymentDao = await paymentsRepository.GetAsync(id);
+            var payment = await paymentsRepository.GetAsync(id);
 
-            if (paymentDao is null)
+            if (payment is null)
             {
                 return new NotFoundObjectResult(new ErrorResponse
                 {
-                    Message = $"Payment with ID {id} not found.", Code = HttpStatusCode.NotFound
+                    Message = $"Payment with ID {id} not found.", Code = StatusCodes.Status404NotFound
                 });
             }
 
-            var paymentResponse = BuildPaymentResponse(paymentDao);
+            var paymentResponse = BuildPaymentResponse(payment);
 
             return new OkObjectResult(paymentResponse);
         }
@@ -74,8 +72,8 @@ public class PaymentsController(
 
             var paymentResponse = BuildPaymentResponse(paymentRequest, authorizationInfo);
             
-            var paymentDao = BuildPaymentDao(paymentResponse);
-            await paymentsRepository.AddAsync(paymentDao);
+            var payment = BuildPayment(paymentResponse);
+            await paymentsRepository.AddAsync(payment);
 
             return new OkObjectResult(paymentResponse);
         }
@@ -94,7 +92,7 @@ public class PaymentsController(
     }
 
     private static PaymentResponse BuildPaymentResponse(ProcessPaymentRequest paymentRequest,
-        AuthorizationInfo? authorizationInfo = null)
+        PaymentAuthorizationResult? authorizationInfo = null)
     {
         PaymentStatus status;
         if (authorizationInfo is null)
@@ -118,26 +116,26 @@ public class PaymentsController(
         return rejectedResponse;
     }
     
-    private static PaymentResponse BuildPaymentResponse(PaymentDao paymentDao)
+    private static PaymentResponse BuildPaymentResponse(Payment payment)
     {
         var paymentResponse = new PaymentResponse
         {
-            Id = paymentDao.Id,
-            ExpiryMonth = paymentDao.ExpiryMonth,
-            ExpiryYear = paymentDao.ExpiryYear,
-            Amount = paymentDao.Amount,
-            CardNumberLastFour = paymentDao.CardNumberLastFour,
-            Currency = paymentDao.Currency.ToString(),
-            Status = paymentDao.Status.ToString()
+            Id = payment.Id,
+            ExpiryMonth = payment.ExpiryMonth,
+            ExpiryYear = payment.ExpiryYear,
+            Amount = payment.Amount,
+            CardNumberLastFour = payment.CardNumberLastFour,
+            Currency = payment.Currency.ToString(),
+            Status = payment.Status.ToString()
         };
         return paymentResponse;
     }
 
-    private PaymentInfo BuildPaymentInfo(ProcessPaymentRequest paymentRequest)
+    private PaymentRequest BuildPaymentInfo(ProcessPaymentRequest paymentRequest)
     {
         var currencyCode = Enum.Parse<CurrencyCode>(paymentRequest.Currency.Trim().ToUpper());
         
-        return new PaymentInfo
+        return new PaymentRequest
         {
             CardNumber = paymentRequest.CardNumber,
             ExpiryMonth = paymentRequest.ExpiryMonth,
@@ -148,9 +146,9 @@ public class PaymentsController(
         };
     }
     
-    private PaymentDao BuildPaymentDao(PaymentResponse paymentResponse)
+    private Payment BuildPayment(PaymentResponse paymentResponse)
     {
-        return new PaymentDao
+        return new Payment
         {
             Id = paymentResponse.Id,
             ExpiryMonth = paymentResponse.ExpiryMonth,
@@ -166,7 +164,7 @@ public class PaymentsController(
     {
         return new ObjectResult(new ErrorResponse
         {
-            Code = statusCode,
+            Code = (int)statusCode,
             Message = errorMessage
         })
         {

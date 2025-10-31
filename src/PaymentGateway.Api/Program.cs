@@ -16,20 +16,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Version = "v1", Title = "Payment Gateway v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo { Version = "v1", Title = "Payment Gateway" });
     options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 });
 
 builder.Services.AddApiVersioning(options =>
 {
-    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.DefaultApiVersion = new ApiVersion(1);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
     options.ApiVersionReader = ApiVersionReader.Combine(
-        new QueryStringApiVersionReader("version"),
         new UrlSegmentApiVersionReader(),
-        new HeaderApiVersionReader("X-API-Version"),
-        new MediaTypeApiVersionReader("version")
+        new HeaderApiVersionReader("X-API-Version")
     );
 });
 

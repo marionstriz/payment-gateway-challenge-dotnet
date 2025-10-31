@@ -32,10 +32,10 @@ API and persistence layers use strings to maintain flexibility and simplify clie
 
 ### Bank Client Abstraction
 
-`IBankClient` accepts `PaymentInfo` and returns `AuthorizationInfo`.
+Bank clients implement the interface `IAuthorizer`, which accepts `PaymentRequest` and returns `PaymentAuthorizationResult`.
 
 These objects do not directly map to bank-specific request/response formats, as banks may vary in field requirements 
-(e.g., expiry date, currency format). Each bank client handles its own mapping.
+(e.g., expiry date, currency format). Each bank client handles its own model mapping.
 
 ### Versioning
 

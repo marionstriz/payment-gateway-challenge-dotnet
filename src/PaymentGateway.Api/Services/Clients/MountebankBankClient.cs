@@ -2,8 +2,7 @@ using Microsoft.Extensions.Options;
 
 using PaymentGateway.Api.Exceptions;
 using PaymentGateway.Api.Models;
-using PaymentGateway.Api.Models.Requests;
-using PaymentGateway.Api.Models.Responses;
+using PaymentGateway.Api.Models.External;
 using PaymentGateway.Api.Settings;
 
 namespace PaymentGateway.Api.Services.Clients;
@@ -14,13 +13,13 @@ public class MountebankBankClient(
 {
     public const string HttpClientName = "Mountebank";
     
-    public async Task<AuthorizationInfo> AuthorizePaymentAsync(PaymentInfo info, CancellationToken cancellationToken = new())
+    public async Task<PaymentAuthorizationResult> AuthorizePaymentAsync(PaymentRequest request, CancellationToken cancellationToken = new())
     {
         try
         {
             var client = httpClientFactory.CreateClient(HttpClientName);
 
-            var paymentAuthorizationRequest = CreateRequest(info);
+            var paymentAuthorizationRequest = CreateRequest(request);
 
             var response = await client.PostAsJsonAsync(clientOptions.Value.PaymentsPath, 
                 paymentAuthorizationRequest, cancellationToken);
@@ -43,24 +42,24 @@ public class MountebankBankClient(
         }
     }
 
-    private AuthorizationInfo CreateAuthorizationInfo(MountebankPaymentAuthorizationResponse authorizationResponse)
+    private PaymentAuthorizationResult CreateAuthorizationInfo(MountebankPaymentAuthorizationResponse authorizationResponse)
     {
-        return new AuthorizationInfo
+        return new PaymentAuthorizationResult
         {
             Authorized = authorizationResponse.Authorized,
             AuthorizationCode = authorizationResponse.AuthorizationCode
         };
     }
 
-    private MountebankPaymentAuthorizationRequest CreateRequest(PaymentInfo info)
+    private MountebankPaymentAuthorizationRequest CreateRequest(PaymentRequest request)
     {
         return new MountebankPaymentAuthorizationRequest
         {
-            Amount = info.Amount, 
-            CardNumber = info.CardNumber, 
-            Currency = info.Currency.ToString(), 
-            Cvv = info.Cvv,
-            ExpiryDate = $"{info.ExpiryMonth:D2}/{info.ExpiryYear}"
+            Amount = request.Amount, 
+            CardNumber = request.CardNumber, 
+            Currency = request.Currency.ToString(), 
+            Cvv = request.Cvv,
+            ExpiryDate = $"{request.ExpiryMonth:D2}/{request.ExpiryYear}"
         };
     }
 }

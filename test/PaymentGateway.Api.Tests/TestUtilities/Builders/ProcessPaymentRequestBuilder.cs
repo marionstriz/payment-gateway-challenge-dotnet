@@ -1,5 +1,5 @@
 using PaymentGateway.Api.Enums;
-using PaymentGateway.Api.Models.Requests;
+using PaymentGateway.Api.Models.Api.Requests;
 
 namespace PaymentGateway.Api.Tests.TestUtilities.Builders;
 

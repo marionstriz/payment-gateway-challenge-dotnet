@@ -2,7 +2,7 @@
 
 namespace PaymentGateway.Api.Models;
 
-public record PaymentInfo
+public record PaymentRequest
 {
     public required string CardNumber { get; init; }
 

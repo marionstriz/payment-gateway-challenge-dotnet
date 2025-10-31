@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 using PaymentGateway.Api.Enums;
 
-namespace PaymentGateway.Api.Models.Requests;
+namespace PaymentGateway.Api.Models.Api.Requests;
 
 public record ProcessPaymentRequest : IValidatableObject
 {

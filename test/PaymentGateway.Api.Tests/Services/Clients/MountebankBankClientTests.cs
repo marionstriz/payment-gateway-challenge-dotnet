@@ -8,7 +8,7 @@ using Moq;
 using PaymentGateway.Api.Enums;
 using PaymentGateway.Api.Exceptions;
 using PaymentGateway.Api.Models;
-using PaymentGateway.Api.Models.Responses;
+using PaymentGateway.Api.Models.External;
 using PaymentGateway.Api.Services.Clients;
 using PaymentGateway.Api.Settings;
 using PaymentGateway.Api.Tests.TestUtilities.Helpers;
@@ -103,9 +103,9 @@ public class MountebankBankClientTests
         Assert.Contains("Montebank payment authorization request failed", ex.Message);
     }
 
-    private PaymentInfo CreatePaymentInfo()
+    private PaymentRequest CreatePaymentInfo()
     {
-        return new PaymentInfo
+        return new PaymentRequest
         {
             Amount = 100,
             CardNumber = "4111111111111111",

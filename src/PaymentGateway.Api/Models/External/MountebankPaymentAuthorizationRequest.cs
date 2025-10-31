@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace PaymentGateway.Api.Models.Requests;
+namespace PaymentGateway.Api.Models.External;
 
 public class MountebankPaymentAuthorizationRequest
 {

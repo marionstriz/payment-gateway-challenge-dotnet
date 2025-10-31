@@ -4,5 +4,5 @@ namespace PaymentGateway.Api.Services;
 
 public interface IAuthorizer
 {
-    public Task<AuthorizationInfo> AuthorizePaymentAsync(PaymentInfo info, CancellationToken cancellationToken = new());
+    public Task<PaymentAuthorizationResult> AuthorizePaymentAsync(PaymentRequest request, CancellationToken cancellationToken = new());
 }

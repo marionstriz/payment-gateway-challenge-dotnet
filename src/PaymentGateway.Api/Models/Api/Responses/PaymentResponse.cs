@@ -1,11 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PaymentGateway.Api.Models.Responses;
+namespace PaymentGateway.Api.Models.Api.Responses;
 
 public record PaymentResponse
 {
     [Required]
-    public required Guid Id { get; init; } = Guid.NewGuid();
+    public required Guid Id { get; init; }
     
     /// <summary>
     /// One of the following values: [Authorized, Declined, Rejected]

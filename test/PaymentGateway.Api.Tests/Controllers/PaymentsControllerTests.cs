@@ -12,10 +12,8 @@ using Moq;
 using PaymentGateway.Api.Controllers;
 using PaymentGateway.Api.Enums;
 using PaymentGateway.Api.Models;
-using PaymentGateway.Api.Models.Persistence;
-using PaymentGateway.Api.Models.Responses;
+using PaymentGateway.Api.Models.Api.Responses;
 using PaymentGateway.Api.Services;
-using PaymentGateway.Api.Services.Clients;
 using PaymentGateway.Api.Services.Repositories;
 using PaymentGateway.Api.Tests.TestUtilities.Builders;
 
@@ -45,8 +43,8 @@ public class PaymentsControllerTests
                     })))
             .CreateClient();
         
-        var authorizationResponse = new AuthorizationInfo{Authorized = true};
-        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>(), It.IsAny<CancellationToken>()))
+        var authorizationResponse = new PaymentAuthorizationResult{Authorized = true};
+        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authorizationResponse);
     }
     
@@ -54,11 +52,11 @@ public class PaymentsControllerTests
     public async Task GivenPaymentInRepository_WhenGetAsync_ThenRetrievesAPaymentSuccessfully()
     {
         // Arrange
-        var paymentDao = CreatePaymentDao();
-        _mockPaymentsRepository.Setup(r => r.GetAsync(paymentDao.Id)).ReturnsAsync(paymentDao);
+        var payment = CreatePayment();
+        _mockPaymentsRepository.Setup(r => r.GetAsync(payment.Id)).ReturnsAsync(payment);
 
         // Act
-        var response = await _client.GetAsync($"/api/Payments/{paymentDao.Id}");
+        var response = await _client.GetAsync($"/api/v1/Payments/{payment.Id}");
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -70,22 +68,22 @@ public class PaymentsControllerTests
     public async Task GivenPaymentInRepository_WhenGetAsync_ThenReturnsPaymentDetails()
     {
         // Arrange
-        var paymentDao = CreatePaymentDao();
-        _mockPaymentsRepository.Setup(r => r.GetAsync(paymentDao.Id)).ReturnsAsync(paymentDao);
+        var payment = CreatePayment();
+        _mockPaymentsRepository.Setup(r => r.GetAsync(payment.Id)).ReturnsAsync(payment);
 
         // Act
-        var response = await _client.GetAsync($"/api/Payments/{paymentDao.Id}");
+        var response = await _client.GetAsync($"/api/v1/Payments/{payment.Id}");
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
         Assert.NotNull(paymentResponse);
-        Assert.Equal(paymentDao.Id, paymentResponse.Id);
-        Assert.Equal(paymentDao.Status.ToString(), paymentResponse.Status);
-        Assert.Equal(paymentDao.ExpiryYear, paymentResponse.ExpiryYear);
-        Assert.Equal(paymentDao.ExpiryMonth, paymentResponse.ExpiryMonth);
-        Assert.Equal(paymentDao.Amount, paymentResponse.Amount);
-        Assert.Equal(paymentDao.CardNumberLastFour, paymentResponse.CardNumberLastFour);
-        Assert.Equal(paymentDao.Currency.ToString(), paymentResponse.Currency);
+        Assert.Equal(payment.Id, paymentResponse.Id);
+        Assert.Equal(payment.Status.ToString(), paymentResponse.Status);
+        Assert.Equal(payment.ExpiryYear, paymentResponse.ExpiryYear);
+        Assert.Equal(payment.ExpiryMonth, paymentResponse.ExpiryMonth);
+        Assert.Equal(payment.Amount, paymentResponse.Amount);
+        Assert.Equal(payment.CardNumberLastFour, paymentResponse.CardNumberLastFour);
+        Assert.Equal(payment.Currency.ToString(), paymentResponse.Currency);
     }
 
     [Fact]
@@ -93,10 +91,10 @@ public class PaymentsControllerTests
     {
         // Arrange
         var guid = Guid.NewGuid();
-        _mockPaymentsRepository.Setup(r => r.GetAsync(guid)).ReturnsAsync(null as PaymentDao);
+        _mockPaymentsRepository.Setup(r => r.GetAsync(guid)).ReturnsAsync(null as Payment);
         
         // Act
-        var response = await _client.GetAsync($"/api/Payments/{guid}");
+        var response = await _client.GetAsync($"/api/v1/Payments/{guid}");
         
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -109,12 +107,12 @@ public class PaymentsControllerTests
         var processPaymentRequest = new ProcessPaymentRequestBuilder().Build();
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
-        var authorizationResponse = new AuthorizationInfo {Authorized = true};
-        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>(), It.IsAny<CancellationToken>()))
+        var authorizationResponse = new PaymentAuthorizationResult {Authorized = true};
+        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authorizationResponse);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -130,10 +128,10 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        await _client.PostAsync("/api/Payments", httpContent);
+        await _client.PostAsync("/api/v1/Payments", httpContent);
         
         // Assert
-        _mockBankClient.Verify(b => b.AuthorizePaymentAsync(It.Is<PaymentInfo>(r => 
+        _mockBankClient.Verify(b => b.AuthorizePaymentAsync(It.Is<PaymentRequest>(r => 
             r.CardNumber.Equals(processPaymentRequest.CardNumber) 
             && r.Amount.Equals(processPaymentRequest.Amount) 
             && r.ExpiryMonth.Equals(processPaymentRequest.ExpiryMonth) 
@@ -157,10 +155,10 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        await _client.PostAsync("/api/Payments", httpContent);
+        await _client.PostAsync("/api/v1/Payments", httpContent);
         
         // Assert
-        _mockBankClient.Verify(b => b.AuthorizePaymentAsync(It.Is<PaymentInfo>(r => 
+        _mockBankClient.Verify(b => b.AuthorizePaymentAsync(It.Is<PaymentRequest>(r => 
                 r.Currency.Equals(expectedCurrency)), It.IsAny<CancellationToken>()),
             Times.Once);
         _mockBankClient.VerifyNoOtherCalls();
@@ -173,12 +171,12 @@ public class PaymentsControllerTests
         var processPaymentRequest = new ProcessPaymentRequestBuilder().Build();
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
-        var authorizationResponse = new AuthorizationInfo {Authorized = false};
-        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentInfo>(), It.IsAny<CancellationToken>()))
+        var authorizationResponse = new PaymentAuthorizationResult {Authorized = false};
+        _mockBankClient.Setup(b => b.AuthorizePaymentAsync(It.IsAny<PaymentRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(authorizationResponse);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -199,7 +197,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -221,7 +219,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -243,7 +241,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -264,7 +262,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -286,7 +284,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -308,7 +306,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -330,7 +328,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -351,7 +349,7 @@ public class PaymentsControllerTests
         var httpContent = CreateJsonHttpContent(processPaymentRequest);
         
         // Act
-        var response = await _client.PostAsync("/api/Payments", httpContent);
+        var response = await _client.PostAsync("/api/v1/Payments", httpContent);
         var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
         
         // Assert
@@ -359,9 +357,9 @@ public class PaymentsControllerTests
         Assert.Equal(nameof(PaymentStatus.Authorized), paymentResponse.Status);
     }
     
-    private PaymentDao CreatePaymentDao()
+    private Payment CreatePayment()
     {
-        return new PaymentDao
+        return new Payment
         {
             Id = Guid.NewGuid(),
             Status = PaymentStatus.Authorized,
